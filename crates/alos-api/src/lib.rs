@@ -5,6 +5,7 @@
 mod routes;
 mod auth;
 pub mod state;
+mod hermes_bridge;
 
 use axum::{Router, routing::get};
 use tower_http::cors::{CorsLayer, Any};

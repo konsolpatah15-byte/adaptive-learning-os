@@ -25,12 +25,9 @@ pub async fn chat(
 
     let user_id = claims.sub;
 
-    // Detect anti-boredom intents
+    // Detect anti-boredom intents first (fast path, deterministic)
     if let Some((note, strategy)) = alos_engine::teaching::detect_learner_intent(&req.message) {
-        // Save the user message
         alos_db::repo::save_tutor_message(&state.db, user_id, req.session_id, "user", &req.message, Some("chat")).await.ok();
-
-        // Respond with the adaptation
         return Ok(Json(serde_json::json!({
             "response": note,
             "strategy": strategy.as_str(),
@@ -38,12 +35,12 @@ pub async fn chat(
         })));
     }
 
-    // Save user message
-    alos_db::repo::save_tutor_message(&state.db, user_id, req.session_id, "user", &req.message, Some("chat")).await.ok();
+    // Call Hermes bridge (or engine fallback)
+    let mode = req.track.as_deref().unwrap_or("explanation");
+    let response = crate::hermes_bridge::chat(&state.db, user_id, &req.message, mode).await;
 
-    // Default tutor response — in production this calls Hermes
     Ok(Json(serde_json::json!({
-        "response": "I understand. Let me help you with that. (Hermes bridge will handle this in production)",
+        "response": response,
         "strategy": "direct",
     })))
 }
