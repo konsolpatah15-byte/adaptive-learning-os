@@ -2,8 +2,27 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 let token: string | null = null;
 
-export function setToken(t: string) { token = t; }
+// Auto-load token from localStorage on init (runs once in browser)
+if (typeof window !== 'undefined') {
+  token = localStorage.getItem('alos_token');
+}
+
+export function setToken(t: string) {
+  token = t;
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('alos_token', t);
+  }
+}
+
+export function clearToken() {
+  token = null;
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('alos_token');
+  }
+}
+
 export function getToken() { return token; }
+export function isLoggedIn() { return token !== null; }
 
 async function fetchAPI(path: string, opts: RequestInit = {}) {
   const headers: Record<string, string> = {
@@ -12,6 +31,9 @@ async function fetchAPI(path: string, opts: RequestInit = {}) {
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${API}${path}`, { ...opts, headers });
+  if (res.status === 401) {
+    clearToken();
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || res.statusText);
