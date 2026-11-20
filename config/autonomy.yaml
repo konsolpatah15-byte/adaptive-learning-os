@@ -1,0 +1,37 @@
+# Autonomy policy — what ALOS may do without asking, and what needs the learner.
+autonomy:
+  level: "guided"                   # guided | cruise | sovereign
+  auto:
+    - select_teaching_strategy
+    - adapt_difficulty
+    - schedule_reviews
+    - generate_daily_plan
+    - classify_mistakes
+    - update_mastery
+  ask_first:
+    - switch_snbt_subtest
+    - change_target_dates
+    - formal_full_length_exam
+    - increase_daily_workload
+    - delete_any_record             # never silent deletion; archive instead
+  hard_rules:
+    - "Teach before testing."
+    - "Never repeat the same remedial assessment after failure — change method first."
+    - "Max 1 formal assessment per week unless learner requests more."
+    - "Max 2 light comprehension checks per lesson."
+    - "TTS listening practice is NOT authentic IELTS listening evidence."
+    - "No definitive CEFR level or official band claims from practice data."
+    - "Pronunciation cannot be assessed from text transcripts."
+    - "Official SNBT/IELTS facts must cite an authoritative source or be marked tentative."
+
+anti_boredom:
+  intent_phrases:
+    too_many_tests: ["too many tests", "kebanyakan tes", "terlalu banyak ujian", "bosan soal"]
+    explain_instead: ["explain instead", "jelaskan saja", "jelasanin dulu", "continue", "lanjut"]
+    weak_here: ["i'm weak here", "aku lemah di sini", "masih bingung", "belum paham"]
+    move_on: ["let's move on", "ganti topik", "lanjut topik lain"]
+  responses:
+    too_many_tests: "switch_to_teaching"      # drop assessments, teach via new method
+    explain_instead: "alternative_explanation"
+    weak_here: "guided_learning_new_method"   # NOT another test
+    move_on: "offer_topic_switch"

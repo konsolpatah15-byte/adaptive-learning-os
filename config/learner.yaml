@@ -1,0 +1,39 @@
+# Learner profile — editable at runtime via Settings API; this file is the seed.
+learner:
+  display_name: "Learner"
+  country: "ID"
+  education:
+    level: "SMK (vocational high school)"
+    major: "Agribisnis Perikanan Air Tawar (Agribusiness of Freshwater Aquaculture)"
+  aspirations:
+    - "University education"
+    - "International scholarships"
+    - "Better academic and professional opportunities"
+
+goals:
+  - track: ielts
+    title: "IELTS Academic Band 7.0–8.0"
+    target_date: "2027-05-20"
+    date_is_tentative: true
+  - track: snbt
+    title: "SNBT 2027 — all 7 subtests, PU first"
+    target_date: null               # official 2027 schedule not yet announced
+    date_is_tentative: true
+
+preferences:
+  explanation_language: "id"
+  can_communicate_in: ["id", "en"]
+  style: ["interactive", "varied", "practical examples", "demonstrations", "discussions", "simulations"]
+  teach_before_test: true
+  dislikes: ["repetitive examinations", "remedial loops"]
+  wants_explanations_first: true
+  allow_topic_change: true
+  allow_less_practice: true
+
+availability:
+  weekday_minutes: 90
+  weekday_window: ["16:30", "19:00"]
+  weekend_minutes: 210              # 3–4 h, scheduler uses 3.5 h and never fills every minute
+  buffer_ratio: 0.15                # leave ~15% of planned time unscheduled (anti-burnout)
+
+baseline_imported: "2026-11-20"     # see database/migrations/002_seed.sql — evidence-tagged

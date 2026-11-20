@@ -1,0 +1,11 @@
+[package]
+name = "alos-modules"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+alos-db = { path = "../alos-db" }
+alos-engine = { path = "../alos-engine" }
+serde.workspace = true
+serde_json.workspace = true

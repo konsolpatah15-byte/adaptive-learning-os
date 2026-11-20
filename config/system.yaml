@@ -1,0 +1,41 @@
+# ALOS 2.0 — system configuration (non-secret settings only)
+app:
+  name: "Adaptive Learning OS"
+  version: "2.0.0"
+  timezone: "Asia/Jakarta"          # learner lives in Indonesia (WIB)
+  language_default: "id"            # explanations in Indonesian by default
+  language_secondary: "en"
+
+server:
+  host: "127.0.0.1"                 # exposed publicly via instabox-port / reverse proxy
+  port: 8000
+  workers: 1                        # single worker keeps RAM tiny (~60 MB RSS)
+  cors_origins: ["*"]               # tighten to the Vercel domain once deployed
+
+database:
+  path: "database/alos.db"          # authoritative learning state (SQLite, WAL)
+  backup_dir: "database/backups"
+  backup_keep: 14                   # rolling daily backups
+  wal: true
+  busy_timeout_ms: 5000
+
+auth:
+  token_ttl_hours: 168              # 7-day sessions
+  rate_limit_per_minute: 120        # per-IP sliding window, in-memory
+
+ai:
+  provider: "hermes"                # subprocess bridge -> existing configured LLM
+  hermes_bin: "hermes"
+  chat_timeout_s: 180
+  max_history_messages: 12          # bounded context sent to the model (RAM + cost)
+  fallback: "engine"                # if Hermes unavailable, deterministic tutor engine answers
+
+tracks:
+  ielts:
+    target_band: [7.0, 8.0]
+    exam_date_tentative: "2027-05-20"
+    official_results_only_from: "official IELTS test report"
+  snbt:
+    year: 2027
+    active_subtest: "pu"            # do not auto-switch subtests
+    official_info_status: "pending_official_2027_announcement"

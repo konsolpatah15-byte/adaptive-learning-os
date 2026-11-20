@@ -1,0 +1,20 @@
+# Scheduling defaults (learner availability lives in learner.yaml; this is engine policy)
+scheduler:
+  plan_horizon_days: 7
+  session_block_minutes: 25         # pomodoro-ish blocks inside the study window
+  break_between_blocks_minutes: 5
+  max_blocks_weekday: 3             # 3x25 + breaks ≈ 85 min ≤ 90 available
+  max_blocks_weekend: 7             # 7x25 + breaks ≈ 205 min ≤ 210 available
+  track_split:                      # balance IELTS vs SNBT per week
+    ielts: 0.5
+    snbt: 0.5
+  review_first: true                # due spaced-repetition items open each session
+  weakest_first: true               # then highest-impact weak competencies
+  variety_rotation:                 # never two identical activity types in a row
+    - explanation
+    - discussion
+    - demonstration
+    - guided_practice
+    - simulation
+  formal_assessment_cadence_days: 7
+  respect_manual_overrides: true

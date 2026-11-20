@@ -1,0 +1,26 @@
+[package]
+name = "alos-api"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+alos-db = { path = "../alos-db" }
+alos-engine = { path = "../alos-engine" }
+alos-modules = { path = "../alos-modules" }
+sqlx.workspace = true
+axum.workspace = true
+tokio.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+validator.workspace = true
+argon2.workspace = true
+jsonwebtoken.workspace = true
+chrono.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+anyhow.workspace = true
+rand.workspace = true

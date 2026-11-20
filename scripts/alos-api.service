@@ -1,0 +1,26 @@
+[Unit]
+Description=ALOS 2.0 — Adaptive Learning OS API
+After=network.target
+
+[Service]
+Type=simple
+User=user
+WorkingDirectory=/data/workspace/adaptive-learning-os
+Environment="ALOS_HOST=127.0.0.1"
+Environment="ALOS_PORT=8000"
+Environment="ALOS_DB_PATH=/data/workspace/adaptive-learning-os/database/alos.db"
+Environment="ALOS_SECRET_KEY=${ALOS_SECRET_KEY}"
+Environment="ALOS_ADMIN_PASSWORD=${ALOS_ADMIN_PASSWORD}"
+Environment="RUST_LOG=info,alos_api=debug"
+ExecStart=/data/workspace/adaptive-learning-os/target/release/alos-api
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Resource limits (target: ~15-30 MB RAM)
+MemoryHigh=50M
+MemoryMax=80M
+
+[Install]
+WantedBy=multi-user.target

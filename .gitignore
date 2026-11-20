@@ -1,0 +1,35 @@
+# Rust
+target/
+*.rs.bk
+
+# Node
+apps/web/node_modules/
+apps/web/.next/
+apps/web/out/
+
+# Database (contains personal data — never commit)
+*.db
+*.db-wal
+*.db-shm
+database/backups/
+database/.secret_key
+
+# Environment
+.env
+.env.local
+.env.production
+config.local.toml
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
