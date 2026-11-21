@@ -29,7 +29,12 @@ async function fetchAPI(path: string, opts: RequestInit = {}) {
     'Content-Type': 'application/json',
     ...(opts.headers as Record<string, string> || {}),
   };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    // Daytona's public preview proxy overwrites the Authorization header,
+    // so also send the JWT in a custom header the proxy passes through.
+    headers['X-API-Token'] = `Bearer ${token}`;
+  }
   const res = await fetch(`${API}${path}`, { ...opts, headers });
   if (res.status === 401) {
     clearToken();

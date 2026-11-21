@@ -34,9 +34,10 @@ pub fn verify_token(token: &str, secret: &str) -> Result<Claims, jsonwebtoken::e
 }
 
 pub fn extract_bearer(headers: &HeaderMap) -> Option<&str> {
-    headers.get("Authorization")
+    headers.get("X-API-Token")
         .and_then(|v| v.to_str().ok())
-        .and_then(|v| v.strip_prefix(BEARER_PREFIX))
+        .or_else(|| headers.get("Authorization").and_then(|v| v.to_str().ok()))
+        .and_then(|v| v.strip_prefix(BEARER_PREFIX).or_else(|| Some(v)))
 }
 
 /// Verify JWT and inject claims into request extensions. Returns 401 on failure.
