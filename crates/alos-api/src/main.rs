@@ -36,56 +36,77 @@ async fn main() -> Result<(), anyhow::Error> {
 }
 
 async fn bootstrap_user(pool: &sqlx::SqlitePool) -> Result<(), anyhow::Error> {
-    // Check if a real user exists (not the placeholder from seed migration)
+    // The seed migration creates user id 1 with a PLACEHOLDER hash so baseline
+    // evidence (assessment_results, mistake_bank) can reference it via FK.
+    // Never delete that row — UPDATE the hash in place so all historical
+    // learning data survives (spec: no silent deletion of learning history).
     let placeholder = sqlx::query_scalar::<_, i64>(
         "SELECT COUNT(*) FROM users WHERE password_hash LIKE '$argon2id%AAAAAAAAAAA%'"
     ).fetch_one(pool).await?;
 
-    if placeholder > 0 {
-        // Delete placeholder user so we can create a real one
-        // (FK constraints: goals/mistakes reference user 1, but we recreate immediately)
-        sqlx::query("DELETE FROM assessment_results WHERE user_id IN (SELECT id FROM users WHERE password_hash LIKE '$argon2id%AAAAAAAAAAA%')").execute(pool).await?;
-        sqlx::query("DELETE FROM goals WHERE user_id IN (SELECT id FROM users WHERE password_hash LIKE '$argon2id%AAAAAAAAAAA%')").execute(pool).await?;
-        sqlx::query("DELETE FROM mistake_bank WHERE user_id IN (SELECT id FROM users WHERE password_hash LIKE '$argon2id%AAAAAAAAAAA%')").execute(pool).await?;
-        sqlx::query("DELETE FROM users WHERE password_hash LIKE '$argon2id%AAAAAAAAAAA%'").execute(pool).await?;
-        tracing::info!("Placeholder user removed, creating real user...");
-    }
-
     let existing = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM users")
         .fetch_one(pool).await?;
-    if existing > 0 {
-        return Ok(());
+
+    if existing > 0 && placeholder == 0 {
+        return Ok(()); // real user already bootstrapped
     }
 
     use argon2::{PasswordHasher, Argon2};
     use argon2::password_hash::SaltString;
-    use rand::Rng;
 
-    let password = std::env::var("ALOS_ADMIN_PASSWORD").unwrap_or_else(|_| "learner123".into());
-    let mut rng = rand::thread_rng();
-    let salt = SaltString::generate(&mut rng);
+    // Password: env override, else persisted random secret (chmod 600, gitignored),
+    // else generate once. Never log the password or its hash.
+    let pw_file = std::path::Path::new("database/.bootstrap_password");
+    let password = match std::env::var("ALOS_ADMIN_PASSWORD") {
+        Ok(p) if !p.is_empty() && p != "learner123" => p,
+        _ => {
+            if let Ok(p) = std::fs::read_to_string(pw_file) {
+                p.trim().to_string()
+            } else {
+                use rand::Rng;
+                let p: String = rand::thread_rng()
+                    .sample_iter(&rand::distributions::Alphanumeric)
+                    .take(16).map(char::from).collect();
+                std::fs::write(pw_file, &p)?;
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::PermissionsExt;
+                    std::fs::set_permissions(pw_file, std::fs::Permissions::from_mode(0o600))?;
+                }
+                tracing::info!("Bootstrap password generated at database/.bootstrap_password");
+                p
+            }
+        }
+    };
+
+    let salt = SaltString::generate(&mut rand::thread_rng());
     let hash = Argon2::default()
         .hash_password(password.as_bytes(), &salt)
         .map_err(|e| anyhow::anyhow!("argon2: {}", e))?
         .to_string();
 
-    tracing::info!(hash_len = hash.len(), hash = %hash, "created password hash");
+    if placeholder > 0 {
+        sqlx::query("UPDATE users SET password_hash = ?1 WHERE password_hash LIKE '$argon2id%AAAAAAAAAAA%'")
+            .bind(&hash)
+            .execute(pool).await?;
+        tracing::info!("Placeholder credentials replaced in place; baseline evidence preserved");
+    } else {
+        sqlx::query(
+            "INSERT INTO users (username, password_hash, display_name, role) VALUES (?1, ?2, ?3, ?4)"
+        )
+        .bind("learner").bind(&hash).bind("Learner").bind("learner")
+        .execute(pool).await?;
+        tracing::info!("Default learner user created (username: learner)");
+    }
 
-    sqlx::query(
-        "INSERT INTO users (username, password_hash, display_name, role) VALUES (?1, ?2, ?3, ?4)"
-    )
-    .bind("learner")
-    .bind(&hash)
-    .bind("Learner")
-    .bind("learner")
-    .execute(pool).await?;
-
-    tracing::info!("Default learner user created (username: learner)");
-
-    // Seed goals
-    sqlx::query("INSERT INTO goals (user_id, track, title, target_date, date_is_tentative) VALUES (1, 'ielts', 'IELTS Academic Band 7.0-8.0', '2027-05-20', 1)").execute(pool).await?;
-    sqlx::query("INSERT INTO goals (user_id, track, title, date_is_tentative) VALUES (1, 'snbt', 'SNBT 2027 — all 7 subtests, PU first', 1)").execute(pool).await?;
-    tracing::info!("Default goals created");
+    // Seed goals only if missing (idempotent across restarts)
+    let goal_count = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM goals WHERE user_id = 1")
+        .fetch_one(pool).await?;
+    if goal_count == 0 {
+        sqlx::query("INSERT INTO goals (user_id, track, title, target_date, date_is_tentative) VALUES (1, 'ielts', 'IELTS Academic Band 7.0-8.0', '2027-05-20', 1)").execute(pool).await?;
+        sqlx::query("INSERT INTO goals (user_id, track, title, date_is_tentative) VALUES (1, 'snbt', 'SNBT 2027 — all 7 subtests, PU first', 1)").execute(pool).await?;
+        tracing::info!("Default goals created");
+    }
 
     Ok(())
 }
